@@ -73,10 +73,13 @@ fn print_box(
     let words = string.split(" ");
     let mut lines: Vec<String> = Vec::new();
 
-    lines.push(format!("\x1B[1;m{}\x1B[0;m", title));
+    lines.push("\x1b[1m".to_string() + &title +"\x1b[0m");
+    lines.push(String::new());
+
+    println!("{:?}", lines[0].chars());
 
     for word in words {
-        if lines.len() == 1 {
+        if lines.len() == 2 {
             lines.push(word.to_string());
             continue;
         }
@@ -99,8 +102,8 @@ fn print_box(
     println!("╭{}╮", vertical_border);
     for line in lines.iter() {
         let mut length_diff: usize = max_length - line.chars().count();
-        if str::ends_with(line, "\x1B[0;m") {
-            length_diff += 10;
+        if str::ends_with(line, "\x1b[0m") {
+            length_diff += 8;
         }
 
         let float_length_diff: f64 = length_diff as f64;
