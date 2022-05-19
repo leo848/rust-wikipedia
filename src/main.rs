@@ -53,8 +53,14 @@ struct Article {
     description_source: String,
 }
 
-fn print_box(string: String, width: Option<u16>, padding: Option<(u8, u8)>) {
-    let unwrapped_padding = padding.unwrap_or((1, 1));
+#[allow(dead_code)]
+enum Alignment {
+    LEFT, MIDDLE, RIGHT
+}
+
+fn print_box(string: String, width: Option<u16>, padding: Option<usize>, alignment: Option<Alignment>) {
+    let unwrapped_padding = padding.unwrap_or(1);
+    let alignment = alignment.unwrap_or(Alignment::LEFT);
 
     let words = string.split(" ");
     let mut lines: Vec<String> = Vec::new();
@@ -78,15 +84,32 @@ fn print_box(string: String, width: Option<u16>, padding: Option<(u8, u8)>) {
         .unwrap()
         .len();
 
-    let padding_left = " ".repeat(unwrapped_padding.0.into());
+    let vertical_border = "─".repeat(max_length+unwrapped_padding*2);
 
+    println!("╭{}╮", vertical_border);
     for line in lines.iter() {
-        let padding_length: usize = max_length - line.chars().count() + 1;
-        let padding_right: String = " "
-            .repeat(unwrapped_padding.1.into())
-            .repeat(padding_length);
-        println!("|{}{}{}|", padding_left, line, padding_right);
+        let length_diff: usize = max_length - line.chars().count();
+
+        let float_length_diff: f64 = length_diff as f64;
+        let half_float_length = float_length_diff/2.0;
+
+        let padding_left_len: usize = match alignment {
+            Alignment::LEFT => unwrapped_padding.into(),
+            Alignment::MIDDLE => (half_float_length.ceil() as usize),
+            Alignment::RIGHT => length_diff,
+        } + unwrapped_padding;
+        let padding_left = " ".repeat(padding_left_len);
+
+        let padding_right_len: usize = match alignment {
+            Alignment::LEFT => length_diff,
+            Alignment::MIDDLE => (half_float_length.floor() as usize),
+            Alignment::RIGHT => unwrapped_padding.into(),
+        } + unwrapped_padding;
+        let padding_right = " ".repeat(padding_right_len);
+
+        println!("│{}{}{}│", padding_left, line, padding_right);
     }
+    println!("╰{}╯", vertical_border);
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -139,7 +162,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let article = serde_json::from_str::<Article>(&json).unwrap();
 
     println!("TITEL:\n{}", article.title);
-    print_box(article.extract, Some(30), None);
+    print_box(article.extract, Some(30), None, Some(Alignment::MIDDLE));
 
     Ok(())
 }
