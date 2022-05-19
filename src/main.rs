@@ -76,8 +76,6 @@ fn print_box(
     lines.push("\x1b[1m".to_string() + &title +"\x1b[0m");
     lines.push(String::new());
 
-    println!("{:?}", lines[0].chars());
-
     for word in words {
         if lines.len() == 2 {
             lines.push(word.to_string());
@@ -191,9 +189,9 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let alignment: Option<Alignment> = match matches.value_of("align") {
         None => None,
-        Some("left") => Some(Alignment::LEFT),
-        Some("middle") => Some(Alignment::MIDDLE),
-        Some("right") => Some(Alignment::RIGHT),
+        Some("left" | "l") => Some(Alignment::LEFT),
+        Some("middle" | "m") => Some(Alignment::MIDDLE),
+        Some("right" | "r") => Some(Alignment::RIGHT),
         Some(&_) => None,
     };
 
