@@ -62,6 +62,7 @@ enum Alignment {
 
 fn print_box(
     string: String,
+    title: String,
     width: Option<u16>,
     padding: Option<usize>,
     alignment: Option<Alignment>,
@@ -72,8 +73,10 @@ fn print_box(
     let words = string.split(" ");
     let mut lines: Vec<String> = Vec::new();
 
+    lines.push(format!("\x1B[1;m{}\x1B[0;m", title));
+
     for word in words {
-        if lines.len() == 0 {
+        if lines.len() == 1 {
             lines.push(word.to_string());
             continue;
         }
@@ -95,7 +98,10 @@ fn print_box(
 
     println!("╭{}╮", vertical_border);
     for line in lines.iter() {
-        let length_diff: usize = max_length - line.chars().count();
+        let mut length_diff: usize = max_length - line.chars().count();
+        if str::ends_with(line, "\x1B[0;m") {
+            length_diff += 10;
+        }
 
         let float_length_diff: f64 = length_diff as f64;
         let half_float_length = float_length_diff / 2.0;
@@ -204,8 +210,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
     };
 
-
-    print_box(format!("\x1B[1m{}\x1B[0m\n{}", article.title, article.extract), width, padding, alignment);
+    print_box(article.extract, article.title, width, padding, alignment);
 
     Ok(())
 }
