@@ -205,7 +205,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     };
 
 
-    print_box(article.extract, width, padding, alignment);
+    print_box(format!("\x1B[1m{}\x1B[0m\n{}", article.title, article.extract), width, padding, alignment);
 
     Ok(())
 }
