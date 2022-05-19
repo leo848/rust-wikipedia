@@ -55,10 +55,17 @@ struct Article {
 
 #[allow(dead_code)]
 enum Alignment {
-    LEFT, MIDDLE, RIGHT
+    LEFT,
+    MIDDLE,
+    RIGHT,
 }
 
-fn print_box(string: String, width: Option<u16>, padding: Option<usize>, alignment: Option<Alignment>) {
+fn print_box(
+    string: String,
+    width: Option<u16>,
+    padding: Option<usize>,
+    alignment: Option<Alignment>,
+) {
     let unwrapped_padding = padding.unwrap_or(1);
     let alignment = alignment.unwrap_or(Alignment::LEFT);
 
@@ -71,7 +78,7 @@ fn print_box(string: String, width: Option<u16>, padding: Option<usize>, alignme
             continue;
         }
         let last_length = lines.last().unwrap().chars().count();
-        if last_length < width.unwrap_or(50).into() || last_length == 0 {
+        if last_length+word.len() < width.unwrap_or(50).into() || last_length == 0 {
             *lines.last_mut().unwrap() = lines.last_mut().unwrap().to_owned() + " " + word;
         } else {
             lines.push(word.to_string());
@@ -84,27 +91,28 @@ fn print_box(string: String, width: Option<u16>, padding: Option<usize>, alignme
         .unwrap()
         .len();
 
-    let vertical_border = "─".repeat(max_length+unwrapped_padding*2);
+    let vertical_border = "─".repeat(max_length + unwrapped_padding * 2);
 
     println!("╭{}╮", vertical_border);
     for line in lines.iter() {
         let length_diff: usize = max_length - line.chars().count();
 
         let float_length_diff: f64 = length_diff as f64;
-        let half_float_length = float_length_diff/2.0;
+        let half_float_length = float_length_diff / 2.0;
 
         let padding_left_len: usize = match alignment {
-            Alignment::LEFT => unwrapped_padding.into(),
+            Alignment::LEFT => 0,
             Alignment::MIDDLE => (half_float_length.ceil() as usize),
             Alignment::RIGHT => length_diff,
         } + unwrapped_padding;
-        let padding_left = " ".repeat(padding_left_len);
 
         let padding_right_len: usize = match alignment {
             Alignment::LEFT => length_diff,
             Alignment::MIDDLE => (half_float_length.floor() as usize),
-            Alignment::RIGHT => unwrapped_padding.into(),
+            Alignment::RIGHT => 0,
         } + unwrapped_padding;
+
+        let padding_left = " ".repeat(padding_left_len);
         let padding_right = " ".repeat(padding_right_len);
 
         println!("│{}{}{}│", padding_left, line, padding_right);
@@ -138,7 +146,18 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .takes_value(false)
                 .help("Print the raw json request"),
         )
+        .arg(Arg::with_name("padding").short("p").long("padding").takes_value(true).help("Amount of padding."),)
+        .arg(Arg::with_name("width").short("w").long("width").takes_value(true).help("Width of the box."),)
+        .arg(
+            Arg::with_name("align")
+                .short("a")
+                .long("align")
+                .takes_value(true)
+                .help("Align the text in the box."),
+        )
         .get_matches();
+
+
     let language = matches.value_of("lang").unwrap_or("de");
     let url = &format!(
         "https://{}.wikipedia.org/api/rest_v1/page/random/summary",
@@ -161,8 +180,32 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let article = serde_json::from_str::<Article>(&json).unwrap();
 
-    println!("TITEL:\n{}", article.title);
-    print_box(article.extract, Some(30), None, Some(Alignment::MIDDLE));
+    let alignment: Option<Alignment> = match matches.value_of("align") {
+        None => None,
+        Some("left") => Some(Alignment::LEFT),
+        Some("middle") => Some(Alignment::MIDDLE),
+        Some("right") => Some(Alignment::RIGHT),
+        Some(&_) => None,
+    };
+
+    let width: Option<u16> = match matches.value_of("width") {
+        None => None,
+        Some(s) => match s.parse::<u16>() {
+            Ok(n) => Some(n),
+            Err(_e) => None,
+        }
+    };
+
+    let padding: Option<usize> = match matches.value_of("padding") {
+        None => None,
+        Some(s) => match s.parse::<usize>() {
+            Ok(n) => Some(n),
+            Err(_e) => None,
+        }
+    };
+
+
+    print_box(article.extract, width, padding, alignment);
 
     Ok(())
 }
