@@ -217,7 +217,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         None => None,
         Some(s) => match s.parse::<u16>() {
             Ok(n) => Some(n),
-            Err(_e) => None,
+            Err(_) => None,
         },
     };
 
@@ -225,7 +225,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         None => None,
         Some(s) => match s.parse::<usize>() {
             Ok(n) => Some(n),
-            Err(_e) => None,
+            Err(_) => None,
         },
     };
 
