@@ -60,6 +60,31 @@ enum Alignment {
     RIGHT,
 }
 
+fn max_length(strings: &Vec<String>) -> usize {
+    let mut max_length = 0usize;
+    for string in strings {
+        let length = string.chars().count();
+        if length > max_length {
+            max_length = length
+        }
+    }
+    max_length
+}
+
+fn get_alignment_padding(alignment: &Alignment, length_diff: usize, padding_size: usize) -> (usize, usize) {
+    let float_length_diff: f64 = length_diff as f64;
+    let half_float_length = float_length_diff / 2.0;
+    let padding = match alignment {
+        Alignment::LEFT => (0, length_diff),
+        Alignment::MIDDLE => (
+            half_float_length.ceil() as usize,
+            half_float_length.floor() as usize,
+        ),
+        Alignment::RIGHT => (length_diff, 0),
+    };
+    (padding.0 + padding_size, padding.1 + padding_size)
+}
+
 fn print_box(
     string: String,
     title: String,
@@ -67,13 +92,13 @@ fn print_box(
     padding: Option<usize>,
     alignment: Option<Alignment>,
 ) {
-    let unwrapped_padding = padding.unwrap_or(1);
+    let padding_size = padding.unwrap_or(1);
     let alignment = alignment.unwrap_or(Alignment::LEFT);
 
     let words = string.split(" ");
     let mut lines: Vec<String> = Vec::new();
 
-    lines.push("\x1b[1m".to_string() + &title +"\x1b[0m");
+    lines.push("\x1b[1m".to_string() + &title + "\x1b[0m");
     lines.push(String::new());
 
     for word in words {
@@ -81,21 +106,16 @@ fn print_box(
             lines.push(word.to_string());
             continue;
         }
-        let last_length = lines.last().unwrap().chars().count();
-        if last_length+word.len() < width.unwrap_or(50).into() || last_length == 0 {
+        let last_length = lines.last().expect("No lines").chars().count();
+        if last_length + word.len() < width.unwrap_or(50).into() || last_length == 0 {
             *lines.last_mut().unwrap() = lines.last_mut().unwrap().to_owned() + " " + word;
         } else {
             lines.push(word.to_string());
         }
     }
 
-    let max_length = lines
-        .iter()
-        .min_by(|x, y| (x.chars().count().cmp(&y.chars().count()).reverse()))
-        .unwrap()
-        .len();
-
-    let vertical_border = "─".repeat(max_length + unwrapped_padding * 2);
+    let max_length = max_length(&lines);
+    let vertical_border = "─".repeat(max_length + padding_size * 2);
 
     println!("╭{}╮", vertical_border);
     for line in lines.iter() {
@@ -104,23 +124,10 @@ fn print_box(
             length_diff += 8;
         }
 
-        let float_length_diff: f64 = length_diff as f64;
-        let half_float_length = float_length_diff / 2.0;
+        let padding: (usize, usize) = get_alignment_padding(&alignment, length_diff, padding_size);
 
-        let padding_left_len: usize = match alignment {
-            Alignment::LEFT => 0,
-            Alignment::MIDDLE => (half_float_length.ceil() as usize),
-            Alignment::RIGHT => length_diff,
-        } + unwrapped_padding;
-
-        let padding_right_len: usize = match alignment {
-            Alignment::LEFT => length_diff,
-            Alignment::MIDDLE => (half_float_length.floor() as usize),
-            Alignment::RIGHT => 0,
-        } + unwrapped_padding;
-
-        let padding_left = " ".repeat(padding_left_len);
-        let padding_right = " ".repeat(padding_right_len);
+        let padding_left = " ".repeat(padding.0);
+        let padding_right = " ".repeat(padding.1);
 
         println!("│{}{}{}│", padding_left, line, padding_right);
     }
@@ -153,8 +160,20 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .takes_value(false)
                 .help("Print the raw json request"),
         )
-        .arg(Arg::with_name("padding").short("p").long("padding").takes_value(true).help("Amount of padding."),)
-        .arg(Arg::with_name("width").short("w").long("width").takes_value(true).help("Width of the box."),)
+        .arg(
+            Arg::with_name("padding")
+                .short("p")
+                .long("padding")
+                .takes_value(true)
+                .help("Amount of padding."),
+        )
+        .arg(
+            Arg::with_name("width")
+                .short("w")
+                .long("width")
+                .takes_value(true)
+                .help("Width of the box."),
+        )
         .arg(
             Arg::with_name("align")
                 .short("a")
@@ -163,7 +182,6 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .help("Align the text in the box."),
         )
         .get_matches();
-
 
     let language = matches.value_of("lang").unwrap_or("de");
     let url = &format!(
@@ -200,7 +218,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         Some(s) => match s.parse::<u16>() {
             Ok(n) => Some(n),
             Err(_e) => None,
-        }
+        },
     };
 
     let padding: Option<usize> = match matches.value_of("padding") {
@@ -208,7 +226,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         Some(s) => match s.parse::<usize>() {
             Ok(n) => Some(n),
             Err(_e) => None,
-        }
+        },
     };
 
     print_box(article.extract, article.title, width, padding, alignment);
