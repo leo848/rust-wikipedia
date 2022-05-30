@@ -207,9 +207,9 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let alignment: Option<Alignment> = match matches.value_of("align") {
         None => None,
-        Some("left" | "l") => Some(Alignment::LEFT),
+        Some("left"   | "l") => Some(Alignment::LEFT),
         Some("middle" | "m") => Some(Alignment::MIDDLE),
-        Some("right" | "r") => Some(Alignment::RIGHT),
+        Some("right"  | "r") => Some(Alignment::RIGHT),
         Some(&_) => None,
     };
 
