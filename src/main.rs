@@ -203,33 +203,39 @@ fn main() -> Result<(), Box<dyn Error>> {
         return Ok(());
     }
 
-    let article = serde_json::from_str::<Article>(&json).unwrap();
+      match serde_json::from_str::<Article>(&json) {
 
-    let alignment: Option<Alignment> = match matches.value_of("align") {
-        None => None,
-        Some("left"   | "l") => Some(Alignment::LEFT),
-        Some("middle" | "m") => Some(Alignment::MIDDLE),
-        Some("right"  | "r") => Some(Alignment::RIGHT),
-        Some(&_) => None,
-    };
+        Ok(article) => {
 
-    let width: Option<u16> = match matches.value_of("width") {
-        None => None,
-        Some(s) => match s.parse::<u16>() {
-            Ok(n) => Some(n),
-            Err(_) => None,
-        },
-    };
+            let alignment: Option<Alignment> = match matches.value_of("align") {
+                None => None,
+                Some("left"   | "l") => Some(Alignment::LEFT),
+                Some("middle" | "m") => Some(Alignment::MIDDLE),
+                Some("right"  | "r") => Some(Alignment::RIGHT),
+                Some(&_) => None,
+            };
+        
+            let width: Option<u16> = match matches.value_of("width") {
+                None => None,
+                Some(s) => match s.parse::<u16>() {
+                    Ok(n) => Some(n),
+                    Err(_) => None,
+                },
+            };
+        
+            let padding: Option<usize> = match matches.value_of("padding") {
+                None => None,
+                Some(s) => match s.parse::<usize>() {
+                    Ok(n) => Some(n),
+                    Err(_) => None,
+                },
+            };
 
-    let padding: Option<usize> = match matches.value_of("padding") {
-        None => None,
-        Some(s) => match s.parse::<usize>() {
-            Ok(n) => Some(n),
-            Err(_) => None,
-        },
-    };
+            print_box(article.extract, article.title, width, padding, alignment);
 
-    print_box(article.extract, article.title, width, padding, alignment);
-
-    Ok(())
+        }
+        Err(e) => {
+            print_box(e.to_string(), "Article has no short description".to_string(), Some(400), Some(10), Some(Alignment::MIDDLE));
+        }   
+    }
 }
